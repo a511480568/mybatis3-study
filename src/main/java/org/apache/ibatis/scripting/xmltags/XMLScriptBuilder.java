@@ -78,17 +78,22 @@ public class XMLScriptBuilder extends BaseBuilder {
     NodeList children = node.getNode().getChildNodes();
     for (int i = 0; i < children.getLength(); i++) {
       XNode child = node.newXNode(children.item(i));
+      // 对于文本节点(CDATA 或者 TEXT)，会检查是否包含动态内容（通过${} 占位符判断）
       if (child.getNode().getNodeType() == Node.CDATA_SECTION_NODE || child.getNode().getNodeType() == Node.TEXT_NODE) {
         String data = child.getStringBody("");
         TextSqlNode textSqlNode = new TextSqlNode(data);
         if (textSqlNode.isDynamic()) {
+          // 如果是动态的，将 TextSqlNode 添加到 contents 中
           contents.add(textSqlNode);
           isDynamic = true;
         } else {
+          // 如果是静态的将 StaticTextSqlNode 添加到 contents 中
           contents.add(new StaticTextSqlNode(data));
         }
       } else if (child.getNode().getNodeType() == Node.ELEMENT_NODE) { // issue #628
+        // 如果含有子标签，就直接判断是动态的
         String nodeName = child.getNode().getNodeName();
+        // 这里根据nodeName 获取对应的 NodeHandler，比如个样的 <foreach> <if> <choose> <otherwise> 对应的 handler 分别是 ForeachHandler、IfHandler、ChooseHandler、OtherwiseHandler
         NodeHandler handler = nodeHandlerMap.get(nodeName);
         if (handler == null) {
           throw new BuilderException("Unknown element <" + nodeName + "> in SQL statement.");

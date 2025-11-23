@@ -3,6 +3,9 @@
         "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
 
 <mapper namespace="org.apache.ibatis.personal.mapper.UserMapper">
+<!--    <cache-ref namespace=""/>-->
+
+
 <!--    <parameterMap id="cont" type="org.apache.ibatis.personal.model.User">-->
 <!--        <parameter property="id" javaType="java.lang.Long" jdbcType="bigint"/>-->
 <!--    </parameterMap>-->
@@ -16,8 +19,9 @@
         id,name
     </sql>
 
-    <select id="getUser" resultMap="usermap">
-        select <include refid="base_column_list"/> from t_user where id = #{id}
+
+    <select id="getUser" resultMap="usermap" >
+        select <include refid="base_column_list"/> from t_user where id = ${id}
     </select>
 
     <select id="getUserByCondition" resultMap="usermap">

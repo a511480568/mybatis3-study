@@ -117,15 +117,18 @@ public class XMLConfigBuilder extends BaseBuilder {
   private void parseConfiguration(XNode root) {
     try {
       // issue #117 read properties first
+      // 解析 mybatis-config.xml 文件中的 <properties></properties> 标签中的内容，并放入到 Configuration 类中的 Properties variables 中
       propertiesElement(root.evalNode("properties"));
+      // 将 mybatis-config.xml 文件中的 <settings></settings> 标签中的内容解析出来，并转成 Properties 对象
       Properties settings = settingsAsProperties(root.evalNode("settings"));
       loadCustomVfsImpl(settings);
+      // 从上面拿到解析出来的 settings 属性，找到对应的 log 实现
       loadCustomLogImpl(settings);
       typeAliasesElement(root.evalNode("typeAliases"));
       pluginsElement(root.evalNode("plugins"));
-      // 用来创建对象实例，比如在查询数据库返回结果，需要将结果映射到 java 对象中的时候，就创建 java 对象实例
+      // 用来创建对象实例，比如在查询数据库返回结果，需要将结果映射到 java 对象中的时候，就创建 java 对象实例，如果 mybatis-config.xml 中没有，那么 configuration 中默认是 DefaultObjectFactory
       objectFactoryElement(root.evalNode("objectFactory"));
-      // 属性包装器，上面的 ObjectFactory 创建对象实例后，需要将数据库查询到的结果一一映射到 java 对象中，就需要用到这个属性包装器
+      // 属性包装器，上面的 ObjectFactory 创建对象实例后，需要将数据库查询到的结果一一映射到 java 对象中，就需要用到这个属性包装器，如果 mybatis-config.xml 中没有，那么 configuration 中默认是 DefaultObjectWrapperFactory
       objectWrapperFactoryElement(root.evalNode("objectWrapperFactory"));
       reflectorFactoryElement(root.evalNode("reflectorFactory"));
       // 这个是将 mybatis-config.xml 中 settings 标签中的内容设置到 Configuration 中
@@ -134,8 +137,9 @@ public class XMLConfigBuilder extends BaseBuilder {
       // 设置环境标签
       environmentsElement(root.evalNode("environments"));
       databaseIdProviderElement(root.evalNode("databaseIdProvider"));
-      // // 用于拄额册所有的 TypeHandler，并建立 jdbc 类型、 JDBC 类型与 TypeHandler 之间的对应关系
+      // // 用于拄额册所有的 TypeHandler，并建立 jdbc 类型、 JDBC 类型与 TypeHandler 之间的对应关系，具体可以看 TypeHandlerRegistry(Configuration configuration) 的构造函数
       typeHandlersElement(root.evalNode("typeHandlers"));
+      // 解析 mapper.xml 文件
       mappersElement(root.evalNode("mappers"));
     } catch (Exception e) {
       throw new BuilderException("Error parsing SQL Mapper Configuration. Cause: " + e, e);
@@ -314,12 +318,14 @@ public class XMLConfigBuilder extends BaseBuilder {
     }
     for (XNode child : context.getChildren()) {
       String id = child.getStringAttribute("id");
+      // 这里就是判断 <environments> 中 <environment> 的 id 属性是否和 <environments> 的 default 属性一致，确定是用哪个配置
       if (isSpecifiedEnvironment(id)) {
         TransactionFactory txFactory = transactionManagerElement(child.evalNode("transactionManager"));
         DataSourceFactory dsFactory = dataSourceElement(child.evalNode("dataSource"));
         DataSource dataSource = dsFactory.getDataSource();
         Environment.Builder environmentBuilder = new Environment.Builder(id).transactionFactory(txFactory)
             .dataSource(dataSource);
+        // 将 environment 添加到 configuration 中
         configuration.setEnvironment(environmentBuilder.build());
         break;
       }
@@ -408,6 +414,7 @@ public class XMLConfigBuilder extends BaseBuilder {
         String resource = child.getStringAttribute("resource");
         String url = child.getStringAttribute("url");
         String mapperClass = child.getStringAttribute("class");
+
         if (resource != null && url == null && mapperClass == null) {
           ErrorContext.instance().resource(resource);
           try (InputStream inputStream = Resources.getResourceAsStream(resource)) {

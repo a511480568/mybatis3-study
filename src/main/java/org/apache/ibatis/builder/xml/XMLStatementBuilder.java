@@ -64,6 +64,7 @@ public class XMLStatementBuilder extends BaseBuilder {
     }
 
     String nodeName = context.getNode().getNodeName();
+    // 将 nodeName 转换成 SqlCommandType，这个 nodeName 其实就是 select|update|insert|delete 这些标签
     SqlCommandType sqlCommandType = SqlCommandType.valueOf(nodeName.toUpperCase(Locale.ENGLISH));
     // 是否是 select 标签
     boolean isSelect = sqlCommandType == SqlCommandType.SELECT;
@@ -81,9 +82,12 @@ public class XMLStatementBuilder extends BaseBuilder {
 
     // LanguageDriver 是接口，在 Configuration 类中默认注册的是 RawLanguageDriver 实现类
     String lang = context.getStringAttribute("lang");
+    // 这里获取到的 LanguageDriver 是 XmlLanguageDriver，具体可以看 Configuration 类的无参构造方法最后两行：languageRegistry.setDefaultDriverClass(XMLLanguageDriver.class); setDefaultDriverClass
+    // 在 mapper.xml 中一般不会配置 lang 这个属性
     LanguageDriver langDriver = getLanguageDriver(lang);
 
     // Parse selectKey after includes and remove them.
+    // 处理 MyBatis 映射文件中的 <selectKey> 节点。这是 MyBatis 中用于处理数据库主键生成的一个重要机制。位于 <insert> 标签中的 <selectKey> 节点，用于处理数据库主键生成。
     processSelectKeyNodes(id, parameterTypeClass, langDriver);
 
     // Parse the SQL (pre: <selectKey> and <include> were parsed and removed)
@@ -112,7 +116,7 @@ public class XMLStatementBuilder extends BaseBuilder {
     if (resultTypeClass == null && resultMap == null) {
       resultTypeClass = MapperAnnotationBuilder.getMethodReturnType(builderAssistant.getCurrentNamespace(), id);
     }
-    // 获取 select|update|insert|delete 节点的 resultType 属性
+    // 获取 select|update|insert|delete 节点的 resultSetType 属性
     String resultSetType = context.getStringAttribute("resultSetType");
     ResultSetType resultSetTypeEnum = resolveResultSetType(resultSetType);
     if (resultSetTypeEnum == null) {

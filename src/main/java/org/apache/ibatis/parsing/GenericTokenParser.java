@@ -20,6 +20,7 @@ package org.apache.ibatis.parsing;
  */
 public class GenericTokenParser {
 
+  // 在 TextSqlNode#isDynamic 方法中，创建了一个 GenericTokenParser 对象，传入的 openToken 和 closeToken 分别为 "${" 和 "}"
   private final String openToken;
   private final String closeToken;
   private final TokenHandler handler;
@@ -35,6 +36,7 @@ public class GenericTokenParser {
       return "";
     }
     // search open token
+    // 这个是判断传入的 sql 中是否有 ${
     int start = text.indexOf(openToken);
     if (start == -1) {
       return text;
